@@ -22,7 +22,7 @@ LOCAL_C_INCLUDES += \
 	external/tinyalsa/include \
 	system/media/audio_effects/include \
 	system/media/audio_utils/include \
-	device/hardkernel/$(TARGET_DEVICE)/conf \
+	device/hardkernel/$(TARGET_DEVICE)/include \
 
 ifeq ($(strip $(BOARD_USES_I2S_AUDIO)),true)
   LOCAL_CFLAGS += -DUSES_I2S_AUDIO
