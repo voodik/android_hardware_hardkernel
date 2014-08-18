@@ -25,19 +25,22 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <cutils/native_handle.h>
+#include <cutils/properties.h>
 #include <hal_public.h>
 #include <ui/GraphicBufferMapper.h>
 #include <gui/IGraphicBufferProducer.h>
 #define MAX_VIDEONODE      4
 #define MIN_VIDEONODE      0
-#define MIN_WIDTH           1280
-#define MIN_HEIGHT          720
-#define CAM_SIZE            "1280x720"
+
 #define PIXEL_FORMAT        V4L2_PIX_FMT_YUYV
 #define CAMHAL_GRALLOC_USAGE GRALLOC_USAGE_HW_TEXTURE | \
                              GRALLOC_USAGE_HW_RENDER | \
                              GRALLOC_USAGE_SW_READ_RARELY | \
                              GRALLOC_USAGE_SW_WRITE_NEVER
+
+    char prop_w[PROPERTY_VALUE_MAX], prop_h[PROPERTY_VALUE_MAX];
+    char prop_size[PROPERTY_VALUE_MAX] = { NULL };
+
 
 extern "C" {
     void yuyv422_to_yuv420sp(unsigned char*,unsigned char*,int,int);
@@ -70,22 +73,34 @@ CameraHardware::CameraHardware(int cameraId)
 {
     initDefaultParameters();
     mNativeWindow=NULL;
+
 }
 
 void CameraHardware::initDefaultParameters()
 {
     CameraParameters p;
 
-    p.setPreviewSize(MIN_WIDTH, MIN_HEIGHT);
+    memset(prop_size, 0, sizeof(prop_size));
+    memset(prop_size, 0, sizeof(prop_w));
+    memset(prop_size, 0, sizeof(prop_h));
+
+    property_get("ro.hardkernel.camera.width", prop_w, "1280");
+    property_get("ro.hardkernel.camera.height", prop_h, "720");
+
+    strcat(prop_size, prop_w);
+    strcat(prop_size, "x");
+    strcat(prop_size, prop_h);
+
+
+    p.setPreviewSize(atoi(prop_w), atoi(prop_h));
     p.setPreviewFrameRate(30);
     p.setPreviewFormat("yuv422sp");
-    p.set(p.KEY_SUPPORTED_PREVIEW_SIZES, CAM_SIZE);
-    p.set(p.KEY_SUPPORTED_PREVIEW_SIZES, "1280x720");
+    p.set(p.KEY_SUPPORTED_PREVIEW_SIZES, prop_size);
     p.set(CameraParameters::KEY_VIDEO_FRAME_FORMAT,CameraParameters::PIXEL_FORMAT_YUV420SP);
     p.set(CameraParameters::KEY_FOCUS_MODE,0);
-    p.setPictureSize(MIN_WIDTH, MIN_HEIGHT);
+    p.setPictureSize(atoi(prop_w), atoi(prop_h));
     p.setPictureFormat("jpeg");
-    p.set(p.KEY_SUPPORTED_PICTURE_SIZES, CAM_SIZE);
+    p.set(p.KEY_SUPPORTED_PICTURE_SIZES, prop_size);
     p.set(CameraParameters::KEY_SUPPORTED_FOCUS_MODES, "fixed");
     p.set(CameraParameters::KEY_EXPOSURE_COMPENSATION_STEP, "0");
     p.set(CameraParameters::KEY_VIDEO_STABILIZATION_SUPPORTED, "false");
@@ -488,7 +503,7 @@ status_t CameraHardware::setParameters(const CameraParameters& params)
     mParameters = params;
     mParameters.setPreviewSize(w,h);
     mParameters.set(CameraParameters::KEY_SUPPORTED_PREVIEW_FPS_RANGE, supportedFpsRanges);
-    mParameters.set(CameraParameters::KEY_SUPPORTED_PREVIEW_SIZES, "1280x720");
+    mParameters.set(CameraParameters::KEY_SUPPORTED_PREVIEW_SIZES, prop_size);
 
     return NO_ERROR;
 }
