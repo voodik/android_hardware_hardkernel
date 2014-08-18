@@ -804,7 +804,15 @@ struct pcm *AudioHardware::openPcmOut_l()
 	    bool haveAlternateCard = (mMixerAlternate != NULL);
 	
 	    if (haveAlternateCard) {
-	        config.rate = 48000;
+		//voodik don't change rate if usb sound have only one capture input (e.g easycap) 
+		unsigned int num_ctls = mixer_get_num_ctls(mMixerAlternate);
+		struct mixer_ctl *ctl= mixer_get_ctl_by_name(mMixerAlternate, "Mic Capture Switch");
+			if (num_ctls == 1 && ctl) {
+			ALOGV("Easycap detected");
+			}
+			else {
+			config.rate = 48000;
+			}
 	        mixer_close(mMixerAlternate);
 	    }
 
